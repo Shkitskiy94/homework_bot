@@ -69,7 +69,11 @@ def get_api_answer(current_timestamp):
     timestamp = current_timestamp or int(time())
     params = {'from_date': timestamp}
     try:
-        homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        homework_statuses = requests.get(
+            ENDPOINT,
+            headers=HEADERS,
+            params=params
+        )
     except Exception as error:
         logging.error(f'Ошибка при запросе к основному API: {error}')
         raise Exception(f'Ошибка при запросе к основному API: {error}')
@@ -112,7 +116,8 @@ def parse_status(homework):
     В качестве параметра функция получает только один элемент
     из списка домашних работ. В случае успеха, функция
     возвращает подготовленную для отправки в Telegram строку,
-    содержащую один из вердиктов словаря HOMEWORK_STATUSES."""
+    содержащую один из вердиктов словаря HOMEWORK_STATUSES.
+    """
     if 'homework_name' not in homework:
         raise KeyError('Отсутствует ключ "homework_name" в ответе API')
     if 'status' not in homework:
