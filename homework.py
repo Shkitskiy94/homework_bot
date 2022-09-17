@@ -116,7 +116,7 @@ def parse_status(homework):
     """
     try:
         if len(homework) == 0:
-            message = f'[Статус] Проект не в обработке: {homework}'
+            message = f'[Статус] Проект не на проверке: {homework}'
             logger.info(message)
             return message
         else:
