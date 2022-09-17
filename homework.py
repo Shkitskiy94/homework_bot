@@ -54,6 +54,7 @@ def send_message(bot, message):
         message = 'Ошибка отправки сообщения!'
         raise exceptions.NotSendMessageError(message)
 
+
 def get_api_answer(current_timestamp):
     """Функция делает запрос к единственному эндпоинту API-сервиса.
     В качестве параметра функция получает
@@ -152,7 +153,7 @@ def main():
         logger.critical(message)
         raise exceptions.NonTokenError(message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time()) #- TWO_WEEKS)
+    current_timestamp = int(time.time())
     error_message = ''
     while True:
         try:
