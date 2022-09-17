@@ -79,7 +79,7 @@ def get_api_answer(current_timestamp):
         raise JSONDecodeError('Запрос к API вернулся не в формате JSON')
     except requests.exceptions.HTTPError as error:
         logger.error(
-            f'[Запрос к API] Ошибочка Ex запроса к эндпоинту API-сервиса:{error}'
+            f'[Запрос к API] Ошибка запроса к эндпоинту API-сервиса:{error}'
         )
         raise requests.exceptions.HTTPError(
             f'[Запрос к API] Статус: {response.status_code},'
