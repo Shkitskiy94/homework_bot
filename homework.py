@@ -92,12 +92,13 @@ def check_response(response):
     except KeyError:
         logger.error('Отсутствует ключ у homeworks')
         raise KeyError('Отсутствует ключ у homeworks')
-    try:
-        homework = homeworks[0]
-    except IndexError:
-        logger.error('Список домашних работ пуст')
-        raise IndexError('Список домашних работ пуст')
-    return homework
+    if homeworks is None:
+        raise KeyError("Не содержит ключ или пустое значение")
+    if not isinstance(homeworks, list):
+        raise TypeError("Неверный формат homework")
+    if not homeworks:
+        return False
+    return homeworks
 
 
 def parse_status(homework):
