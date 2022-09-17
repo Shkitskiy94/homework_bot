@@ -27,7 +27,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 3
+RETRY_TIME = 600
 # TWO_WEEKS = 1209600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -97,7 +97,8 @@ def check_response(response):
     if not isinstance(homeworks, list):
         raise TypeError("Неверный формат homework")
     if not homeworks:
-        return False
+        logger.info('Список домашних работ пуст')
+        raise IndexError('Список домашних работ пуст')
     return homeworks
 
 
@@ -163,7 +164,7 @@ def main():
             for status in statuses:
                 message = parse_status(status)
                 send_message(bot, message)
-            current_timestamp = response.get('current_date', current_timestamp)
+            current_timestamp = response.get('current_date')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(error)
