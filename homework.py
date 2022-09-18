@@ -19,7 +19,7 @@ RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
-HOMEWORK_STATUSES = {
+HOMEWORK_VERDICTS = {
     'reviewing': 'Работа взята на проверку ревьюером.',
     'rejected': 'Работа проверена: у ревьюера есть замечания.',
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -115,8 +115,8 @@ def parse_status(homework):
         else:
             homework_name = homework['homework_name']
             homework_status = homework['status']
-            if homework_status in HOMEWORK_STATUSES:
-                verdict = HOMEWORK_STATUSES[homework_status]
+            if homework_status in HOMEWORK_VERDICTS:
+                verdict = HOMEWORK_VERDICTS[homework_status]
                 mes_verdict = (
                     f'Изменился статус проверки работы "{homework_name}".'
                     f'{verdict}'
@@ -177,11 +177,11 @@ def main():
                 else:
                     logger.debug('Без обновлений')
             else:
-                if homeworks[0]['status'] in HOMEWORK_STATUSES:
+                if homeworks[0]['status'] in HOMEWORK_VERDICTS:
                     if homeworks[0]['status'] != status_ok:
                         status_ok = homeworks[0]['status']
                         parse_status(homeworks[0])
-                        send_message(bot, HOMEWORK_STATUSES[status_ok])
+                        send_message(bot, HOMEWORK_VERDICTS[status_ok])
                     else:
                         logger.debug('Без обновлений')
         except Exception as error:
