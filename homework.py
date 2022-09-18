@@ -25,13 +25,6 @@ HOMEWORK_STATUSES = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
 }
 
-logging.basicConfig(
-    level=logging.INFO,
-    filename='Jurgen.log',
-    format='%(asctime)s, %(levelname)s, %(message)s,'
-           '%(funcName)s, %(lineno)s',
-    filemode='w',
-)
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
@@ -49,7 +42,7 @@ def send_message(bot, message):
         )
         logger.info(f'Отправлено сообщение: {message}')
     except telegram.TelegramError:
-        logger.error(f'Ошибка отправки сообщения!: {message}')
+        raise telegram.TelegramError('Ошибка в отправке сообщения!')
 
 
 def get_api_answer(current_timestamp):
@@ -59,10 +52,14 @@ def get_api_answer(current_timestamp):
     должна вернуть ответ API, преобразовав
     его из формата JSON к типам данных Python.
     """
-    timestamp = current_timestamp or int(time.time())
-    params = {'from_date': timestamp}
+    timestamp = current_timestamp or int(time())
+    requests_params = {
+        'url': ENDPOINT,
+        'headers': HEADERS,
+        'params': {'from_date': timestamp},
+    }
     try:
-        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        response = requests.get(**requests_params)
         logger.info(f'[Запрос к API] статуc (HTTP): {response.status_code}')
         if response.status_code != HTTPStatus.OK:
             logger.error(
@@ -70,18 +67,18 @@ def get_api_answer(current_timestamp):
                 f'Статус ответа сервера {response.status_code}'
             )
             raise exceptions.ErrorMessage(
-                f'[Запрос к API] Статус, отличный от HTTP 200: '
-                f'{response.status_code}'
+                f'[Запрос к API]'
+                f'Статус, отличный от HTTP 200:{response.status_code}'
             )
         return response.json()
     except JSONDecodeError:
         logger.error('Запрос к API вернулся не в формате JSON')
         raise JSONDecodeError('Запрос к API вернулся не в формате JSON')
-    except requests.exceptions.HTTPError as error:
+    except Exception as error:
         logger.error(
             f'[Запрос к API] Ошибка запроса к эндпоинту API-сервиса:{error}'
         )
-        raise requests.exceptions.HTTPError(
+        raise Exception(
             f'[Запрос к API] Статус: {response.status_code},'
             f'Получена ошибка: {error}'
         )
@@ -101,7 +98,6 @@ def check_response(response):
     if not homeworks:
         logger.debug('[Корректность] Список домашних работ пуст')
     if not isinstance(homeworks, list):
-        logger.error('[Корректность] Неверный формат homework.')
         raise TypeError('[Корректность] Ошибка типа.')
     return homeworks
 
@@ -132,7 +128,6 @@ def parse_status(homework):
                 return mes_verdict
             raise KeyError('[Статус] шибка статуса (ключа) homework')
     except KeyError:
-        logger.error('[Статус] Ошибка исключения по ключу.')
         raise KeyError('[Статус] ERROR: Ошибка ключа')
 
 
@@ -166,20 +161,32 @@ def main():
     работы из обновлений и отправляет сообщение в,
     Telegram и ждет некоторое время и делает новый запрос
     """
+    if not check_tokens():
+        message = 'Отсутствуют токены чата (id чата, бота или Практикума)'
+        logger.critical(message)
+        raise exceptions.NonTokenError(message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time())
+    status_non = None
+    status_ok = None
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
             if len(homeworks) == 0:
-                parse_status(homeworks)
-                send_message(bot, f'Работа не на проверке: {homeworks}')
+                if parse_status(homeworks) != status_non:
+                    status_non = parse_status(homeworks)
+                    send_message(bot, f'Работа не на проверке: {homeworks}')
+                else:
+                    logger.debug('Без обновлений')
             else:
                 if homeworks[0]['status'] in HOMEWORK_STATUSES:
-                    status = homeworks[0]['status']
-                    parse_status(homeworks[0])
-                    send_message(bot, HOMEWORK_STATUSES[status])
+                    if homeworks[0]['status'] != status_ok:
+                        status_ok = homeworks[0]['status']
+                        parse_status(homeworks[0])
+                        send_message(bot, HOMEWORK_STATUSES[status_ok])
+                    else:
+                        logger.debug('Без обновлений')
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
@@ -189,4 +196,11 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        filename='Jurgen.log',
+        format='%(asctime)s, %(levelname)s, %(message)s,'
+               '%(funcName)s, %(lineno)s',
+        filemode='w',
+    )
     main()
